@@ -10,16 +10,18 @@ include(DownloadExternals)
 include(ExternalProject)
 
 # Boost
-set(BOOST_ROOT "${CMAKE_SOURCE_DIR}/externals/boost")
-set(Boost_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/externals/boost")
-set(Boost_NO_SYSTEM_PATHS ON)
-add_library(boost INTERFACE)
-target_include_directories(boost SYSTEM INTERFACE ${Boost_INCLUDE_DIR})
+if (NOT USE_SYSTEM_BOOST)
+    set(BOOST_ROOT "${CMAKE_SOURCE_DIR}/externals/boost")
+    set(Boost_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/externals/boost")
+    set(Boost_NO_SYSTEM_PATHS ON)
+    add_library(boost INTERFACE)
+    target_include_directories(boost SYSTEM INTERFACE ${Boost_INCLUDE_DIR})
 
 # Boost::serialization
-file(GLOB boost_serialization_SRC "${CMAKE_SOURCE_DIR}/externals/boost/libs/serialization/src/*.cpp")
-add_library(boost_serialization STATIC ${boost_serialization_SRC})
-target_link_libraries(boost_serialization PUBLIC boost)
+    file(GLOB boost_serialization_SRC "${CMAKE_SOURCE_DIR}/externals/boost/libs/serialization/src/*.cpp")
+    add_library(boost_serialization STATIC ${boost_serialization_SRC})
+    target_link_libraries(boost_serialization PUBLIC boost)
+endif()
 
 # Add additional boost libs here; remember to ALIAS them in the root CMakeLists!
 
@@ -28,13 +30,21 @@ add_library(catch-single-include INTERFACE)
 target_include_directories(catch-single-include INTERFACE catch/single_include)
 
 # Crypto++
-add_subdirectory(cryptopp)
+if (NOT USE_SYSTEM_CRYPTOPP)
+    add_subdirectory(cryptopp)
+else()
+    find_library(CRYPTOPP_LIBS cryptopp REQUIRED)
+endif()
 
 # Xbyak
 if (ARCHITECTURE_x86_64)
-    add_library(xbyak INTERFACE)
-    target_include_directories(xbyak SYSTEM INTERFACE ./xbyak/xbyak)
-    target_compile_definitions(xbyak INTERFACE XBYAK_NO_OP_NAMES)
+    if (NOT USE_SYSTEM_XBYAK)
+        add_library(xbyak INTERFACE)
+        target_include_directories(xbyak SYSTEM INTERFACE ./xbyak/xbyak)
+        target_compile_definitions(xbyak INTERFACE XBYAK_NO_OP_NAMES)
+    else()
+        find_path(XBYAK_INCLUDE xbyak.h PATH_SUFFIXES xbyak REQUIRED)
+    endif()
 endif()
 
 # Dynarmic
@@ -46,8 +56,12 @@ if (ARCHITECTURE_x86_64 OR ARCHITECTURE_ARM64)
 endif()
 
 # libfmt
-add_subdirectory(fmt)
-add_library(fmt::fmt ALIAS fmt)
+if (NOT USE_SYSTEM_FMT)
+    add_subdirectory(fmt)
+    add_library(fmt::fmt ALIAS fmt)
+else()
+    find_package(fmt REQUIRED)
+endif()
 
 # getopt
 if (MSVC)
@@ -58,7 +72,11 @@ endif()
 add_subdirectory(glad)
 
 # inih
-add_subdirectory(inih)
+if (NOT USE_SYSTEM_INIH)
+    add_subdirectory(inih)
+else()
+    find_library(INIH_LIBS INIReader REQUIRED)
+endif()
 
 # MicroProfile
 add_library(microprofile INTERFACE)
@@ -77,20 +95,36 @@ add_subdirectory(soundtouch)
 target_include_directories(SoundTouch INTERFACE ./soundtouch/include)
 
 # Teakra
-add_subdirectory(teakra EXCLUDE_FROM_ALL)
+if (NOT USE_SYSTEM_TEAKRA)
+    add_subdirectory(teakra EXCLUDE_FROM_ALL)
+else()
+    find_library(TEAKRA_LIBS teakra REQUIRED)
+endif()
 
 # Zstandard
-add_subdirectory(zstd/build/cmake EXCLUDE_FROM_ALL)
-target_include_directories(libzstd_static INTERFACE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/externals/zstd/lib>)
+if (NOT USE_SYSTEM_ZSTD)
+    add_subdirectory(zstd/build/cmake EXCLUDE_FROM_ALL)
+    target_include_directories(libzstd_static INTERFACE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/externals/zstd/lib>)
+else()
+    find_library(ZSTD_LIBS zstd REQUIRED)
+endif()
 
 # ENet
-add_subdirectory(enet)
-target_include_directories(enet INTERFACE ./enet/include)
+if (NOT USE_SYSTEM_ENET)
+    add_subdirectory(enet)
+    target_include_directories(enet INTERFACE ./enet/include)
+else()
+    find_library(ENET_LIBS enet REQUIRED)
+endif()
 
 # Cubeb
 if (ENABLE_CUBEB)
-    set(BUILD_TESTS OFF CACHE BOOL "")
-    add_subdirectory(cubeb EXCLUDE_FROM_ALL)
+    if (NOT USE_SYSTEM_CUBEB)
+        set(BUILD_TESTS OFF CACHE BOOL "")
+        add_subdirectory(cubeb EXCLUDE_FROM_ALL)
+    else()
+        find_package(cubeb REQUIRED)
+    endif()
 endif()
 
 # DiscordRPC
