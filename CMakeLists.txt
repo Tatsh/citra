@@ -40,6 +40,14 @@ CMAKE_DEPENDENT_OPTION(ENABLE_MF "Use Media Foundation decoder (preferred over F
 CMAKE_DEPENDENT_OPTION(COMPILE_WITH_DWARF "Add DWARF debugging information" ON "MINGW" OFF)
 
 option(USE_SYSTEM_BOOST "Use the system Boost libs (instead of the bundled ones)" OFF)
+option(USE_SYSTEM_CUBEB "Use system cubeb libs" OFF)
+option(USE_SYSTEM_ENET "Use system enet libs" OFF)
+option(USE_SYSTEM_FMT "Use system fmt libs" OFF)
+option(USE_SYSTEM_INIH "Use system inih" OFF)
+option(USE_SYSTEM_TEAKRA "Use system Teakra libs" OFF)
+option(USE_SYSTEM_XBYAK "Use system xbyak" OFF)
+option(USE_SYSTEM_ZSTD "Use system zstd libs" OFF)
+option(DISABLE_SUBMODULE_CHECK "Disable check for submodules" OFF)
 
 CMAKE_DEPENDENT_OPTION(ENABLE_FDK "Use FDK AAC decoder" OFF "NOT ENABLE_FFMPEG_AUDIO_DECODER;NOT ENABLE_MF" OFF)
 
@@ -63,7 +71,9 @@ function(check_submodules_present)
         endif()
     endforeach()
 endfunction()
-check_submodules_present()
+if (NOT DISABLE_SUBMODULE_CHECK)
+    check_submodules_present()
+endif()
 
 configure_file(${PROJECT_SOURCE_DIR}/dist/compatibility_list/compatibility_list.qrc
                ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.qrc
